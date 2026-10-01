@@ -1,3 +1,14 @@
 #!/usr/bin/env bash
-echo "not implemented yet (Task 10)"
-exit 0
+# installers/os-packages — base OS packages per OS (brew bundle / pacman / apt). Idempotent.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source lib/os.sh
+
+# package lists live at repo root (Brewfile / pacman.txt / apt.txt)
+case "$OS" in
+  mac) brew bundle --file "$(dirname "$0")/../Brewfile" ;;
+  arch) sudo pacman -S --needed "$(tr '\n' ' ' < pacman.txt)" ;;
+  ubuntu|linux-generic) sudo apt-get update && sudo apt-get install -y $(tr '\n' ' ' < apt.txt) ;;
+  *) echo "installers/os-packages: unsupported OS: $OS" >&2; exit 1 ;;
+esac
+echo "os-packages OK ($OS)"

@@ -1,0 +1,8 @@
+# Arch packages — `just install-os-packages` (installers/os-packages: pacman)
+# Runtimes are mise-managed — see mise.toml.
+kitty
+ttf-jetbrains-mono
+neovim
+tmux
+git
+curl

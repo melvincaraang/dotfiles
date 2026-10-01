@@ -1,0 +1,9 @@
+# Ubuntu/Debian packages — `just install-os-packages` (installers/os-packages: apt)
+# Runtimes are mise-managed — see mise.toml.
+kitty
+fonts-jetbrains-mono
+neovim
+tmux
+git
+curl
+ca-certificates
