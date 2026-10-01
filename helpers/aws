@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+P="${AWS_PROFILE:?AWS_PROFILE must be set in .env}"
+if aws --profile "$P" sts get-caller-identity >/dev/null 2>&1; then
+  aws --profile "$P" sts get-caller-identity | grep -E 'Arn|AccountId'
+else
+  echo "profile '$P' not authenticated on this machine (SSO sessions don't travel)."
+  echo "Run:  aws sso login --profile $P"
+fi
