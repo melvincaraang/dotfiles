@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+tool="${1:-all}"
+case "$tool" in
+  all) ./secrets/check; for t in kitty nvim tmux pi searxng zsh; do ./doctor/"$t"; done ;;
+  secrets) ./secrets/check ;;
+  uv|node|ripgrep|fzf|awscli|just|os-packages|runtimes) ./doctor/"$tool" ;;
+  kitty|nvim|tmux|pi|searxng|zsh)
+    [ -x "./doctor/$tool" ] || { echo "doctor/$tool not implemented yet (later task)"; exit 0; }
+    ./doctor/"$tool" ;;
+  *) echo "unknown: $tool (try: all | secrets | kitty nvim tmux pi searxng zsh | uv node ripgrep fzf awscli just)" >&2; exit 2 ;;
+esac
