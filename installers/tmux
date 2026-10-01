@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# installers/tmux — tmux binary per OS (mac: brew | arch: pacman | ubuntu: apt).
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source lib/os.sh
+
+case "$OS" in
+  mac)
+    if command -v gtimeout >/dev/null 2>&1; then
+      gtimeout 120 brew install tmux
+    else
+      brew install tmux
+    fi
+    ;;
+  arch)   sudo pacman -S --needed tmux ;;
+  ubuntu) sudo apt-get install -y tmux ;;
+  *)      echo "installers/tmux: unsupported OS: $OS" >&2; exit 1 ;;
+esac
+echo "installed: tmux ($OS)"

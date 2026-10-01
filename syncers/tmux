@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# syncers/tmux — link the repo tmux.conf to ~/.tmux.conf (idempotent).
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source lib/os.sh
+
+ln -sfn "$ROOT/tmux/tmux.conf" ~/.tmux.conf
+echo "synced: $HOME/.tmux.conf -> $ROOT/tmux/tmux.conf"

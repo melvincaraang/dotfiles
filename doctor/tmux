@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# doctor/tmux — tmux binary present, then proof the conf parses and applies:
+# spawn a detached probe session and require the global automatic-rename
+# option (set by our tmux.conf) to be on; kill the probe session after.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source lib/os.sh
+
+# 1) binary + version
+tmux_v="$(tmux -V 2>/dev/null)" || { echo "FAIL: tmux binary" >&2; exit 1; }
+echo "ok: ${tmux_v}"
+
+# 2) conf parse probe (detached; automatic-rename is set in our conf)
+tmux kill-session -t dotprobe 2>/dev/null || true
+tmux new-session -d -s dotprobe -e FOO=bar || { echo "FAIL: tmux new-session probe" >&2; exit 1; }
+if tmux show-options -g automatic-rename | grep -q 'automatic-rename on'; then
+  tmux kill-session -t dotprobe
+  echo "ok: conf parsed (automatic-rename on; probe session killed)"
+else
+  tmux kill-session -t dotprobe 2>/dev/null || true
+  echo "FAIL: automatic-rename not 'on' — tmux.conf not applied" >&2
+  exit 1
+fi
+echo "doctor/tmux: PASS"
