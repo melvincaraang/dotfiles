@@ -1,0 +1,12 @@
+use_default_settings: true
+server:
+  bind_address: 127.0.0.1
+  port: ${SEARXNG_PORT}
+  secret_key: "${SEARXNG_SECRET_KEY}"
+  limiter: false
+  public_instance: false
+  image_proxy: false
+search:
+  formats:
+    - html
+    - json

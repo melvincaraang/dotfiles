@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# searxng/start — local SearXNG (JSON API for pi's web_search tool) —
+# start|stop|status|logs. Binds 127.0.0.1:8080 only.
+# DIR from env SEARXNG_HOME (portable default: ~/tools/searxng).
+# Requires: uv, git (searxng already cloned there — see searxng/bootstrap).
+set -euo pipefail
+DIR="${SEARXNG_HOME:-$HOME/tools/searxng}"
+PORT="${SEARXNG_PORT:-8080}"
+PY="$DIR/.venv/bin/python"
+
+is_up() { curl -sS -m 2 -o /dev/null "http://127.0.0.1:$PORT/" 2>/dev/null; }
+
+case "${1:-start}" in
+  start)
+    if is_up; then echo "already running on 127.0.0.1:$PORT"; exit 0; fi
+    [ -x "$PY" ] || ( cd "$DIR" && uv venv .venv --python 3.13 && uv pip install -r requirements.txt )
+    cd "$DIR"
+    SEARXNG_SETTINGS_PATH="$DIR" nohup "$PY" -m searx.webapp >> "$DIR/nohup.log" 2>&1 &
+    for i in $(seq 1 15); do sleep 1; is_up && break; done
+    is_up && echo "searxng up on 127.0.0.1:$PORT" || { echo "FAILED — see $DIR/nohup.log"; tail -5 "$DIR/nohup.log"; exit 1; }
+    ;;
+  stop)
+    pkill -f 'searx.webapp' && echo "stopped" || echo "not running"
+    ;;
+  status)
+    is_up && echo "up on 127.0.0.1:$PORT" || echo "down"
+    ;;
+  logs)
+    tail -n "${2:-20}" "$DIR/nohup.log"
+    ;;
+  *) echo "usage: $0 start|stop|status|logs [N]"; exit 2 ;;
+esac

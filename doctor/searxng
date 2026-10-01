@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# doctor/searxng — service up (start idempotently if down) + JSON API probe.
+# Probe: /search?q=test&format=json must return a healthy SearXNG JSON
+# payload — "success":true or a categories array (per plan), or, as this
+# SearXNG version actually returns, a query+results object.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+[ -f .env ] || { echo "error: .env not found — run: just secrets" >&2; exit 1; }
+set -a; . ./.env; set +a
+PORT="${SEARXNG_PORT:-8080}"
+HOME_DIR="${SEARXNG_HOME:-$HOME/tools/searxng}"
+
+# 1) service up — `start status` → up; else `start` (idempotent)
+state="$(SEARXNG_HOME="$HOME_DIR" SEARXNG_PORT="$PORT" ./searxng/start status)"
+case "$state" in
+  up*) echo "ok: service up ($state)" ;;
+  *)
+    echo "service down — starting (idempotent)..."
+    SEARXNG_HOME="$HOME_DIR" SEARXNG_PORT="$PORT" ./searxng/start
+    ;;
+esac
+
+# 2) JSON API probe
+resp="$(curl -sS -m 5 "http://127.0.0.1:${PORT}/search?q=test&format=json")"
+if printf '%s\n' "$resp" | python3 -c '
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+sys.exit(0 if (d.get("success") or "categories" in d or ("query" in d and "results" in d)) else 1)
+' 2>/dev/null; then
+  echo "ok: JSON API healthy: $(head -c 60 <<< "$resp")..."
+else
+  echo "FAIL: JSON API probe (http://127.0.0.1:${PORT}/search?q=test&format=json)" >&2
+  echo "got: $(head -c 60 <<< "$resp")..." >&2
+  exit 1
+fi
+echo "doctor/searxng: PASS"

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# syncers/searxng — $SEARXNG_HOME dir prep via ./searxng/bootstrap:
+# adopt-or-clone the working copy, render settings.yml from the in-repo
+# template (secret from .env), ensure the .venv. Idempotent.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source lib/os.sh
+
+[ -f .env ] || { echo "error: .env not found — run: just secrets" >&2; exit 1; }
+set -a; . ./.env; set +a
+
+./searxng/bootstrap
+echo "synced: $SEARXNG_HOME (settings.yml rendered, .venv ready)"
