@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# installers/kitty — kitty binary + JetBrains Mono font, per OS.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source lib/os.sh
+
+kitty_probing() {   # headless-safe binary probe (`kitty --version` hangs in non-GUI shells)
+  if command -v gtimeout >/dev/null 2>&1; then
+    gtimeout 20 kitty +kitten hints --help >/dev/null 2>&1
+  else
+    kitty +kitten hints --help >/dev/null 2>&1
+  fi
+}
+
+case "$OS" in
+  mac)
+    # brew cannot replace a manual /Applications/kitty.app install — skip it if already working
+    kitty_probing && echo "kitty already present: skipping cask install" || brew install --cask kitty
+    brew install --cask font-jetbrains-mono
+    ;;
+  arch)   sudo pacman -S --needed kitty ttf-jetbrains-mono ;;
+  ubuntu) sudo apt-get install -y kitty fonts-jetbrains-mono ;;
+  *)      echo "installers/kitty: unsupported OS: $OS" >&2; exit 1 ;;
+esac
+echo "installed: kitty + JetBrains Mono ($OS)"

@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# doctor/kitty — binary check, font check, config-include check.
+# Binary probe is `kitty +kitten hints --help` (verified fast + headless-safe);
+# `kitty --version` hangs in non-GUI shells on macOS, so it is not used.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source lib/os.sh
+
+# 1) kitty binary check
+if command -v gtimeout >/dev/null 2>&1; then
+  gtimeout 20 kitty +kitten hints --help >/dev/null 2>&1 || { echo "FAIL: kitty binary probe" >&2; exit 1; }
+else
+  kitty +kitten hints --help >/dev/null 2>&1 || { echo "FAIL: kitty binary probe" >&2; exit 1; }
+fi
+echo "ok: kitty binary"
+
+# 2) JetBrains Mono font installed
+fc="$(fc-match JetBrainsMono 2>/dev/null || true)"
+case "$fc" in
+  *[Jj]et[Bb]rains*) echo "ok: font: $fc" ;;
+  *) echo "FAIL: JetBrains Mono font not found (fc-match: ${fc:-<empty>})" >&2; exit 1 ;;
+esac
+
+# 3) config-parse check: every include/source referenced by the installed
+#    kitty.conf must exist, including the files those includes reference
+#    (current-theme.conf, current-keybindings.conf -> keybindings-<OS>.conf).
+KDIR="${XDG_CONFIG_HOME:-$HOME/.config}/kitty"
+CONF="$KDIR/kitty.conf"
+[ -f "$CONF" ] || { echo "FAIL: missing $CONF" >&2; exit 1; }
+fail=0
+while IFS= read -r ref; do
+  [ -n "$ref" ] || continue
+  if [ ! -f "$KDIR/$ref" ]; then
+    echo "FAIL: kitty.conf includes missing file: $ref" >&2
+    fail=1
+    continue
+  fi
+  while IFS= read -r sub; do
+    [ -n "$sub" ] || continue
+    [ -f "$KDIR/$sub" ] || { echo "FAIL: $ref includes missing file: $sub" >&2; fail=1; }
+  done < <(sed -nE 's/^[[:space:]]*(include|source)[[:space:]]+//p' "$KDIR/$ref")
+done < <(sed -nE 's/^[[:space:]]*(include|source)[[:space:]]+//p' "$CONF")
+[ "$fail" -eq 0 ] || exit 1
+echo "ok: config includes resolve (theme + keybindings-$OS)"
+echo "doctor/kitty: PASS"

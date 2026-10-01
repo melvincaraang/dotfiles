@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# syncers/kitty — link the kitten config dir into ~/.config and render the
+# per-OS keybinding include. current-keybindings.conf is a machine artifact
+# derived from $OS at sync time (gitignored).
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source lib/os.sh
+LINK="$HOME/.config/kitty"
+if [ -e "$LINK" ] && [ ! -L "$LINK" ]; then
+  echo "error: $LINK is a real directory — back it up and remove it before re-linking" >&2
+  exit 1
+fi
+mkdir -p ~/.config
+ln -sfn "$ROOT/kitty" "$LINK"
+printf 'source keybindings-%s.conf\n' "$OS" > "$ROOT/kitty/current-keybindings.conf"
+echo "synced: $LINK -> $ROOT/kitty (keybindings=$OS)"
