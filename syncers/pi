@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# syncers/pi — symlink the two static files (~/.pi/agent/settings.json,
+# ~/.pi/agent/AGENTS.md). The two rendered files (~/.pi/agent/models.json,
+# ~/.pi/searxng.json) are owned by syncers/secrets — which has the template
+# guard, so calling it after the template exists just works.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source lib/os.sh
+
+mkdir -p ~/.pi/agent
+ln -sfn "$ROOT/pi/agent/settings.json" ~/.pi/agent/settings.json
+ln -sfn "$ROOT/pi/agent/AGENTS.md"     ~/.pi/agent/AGENTS.md
+./syncers/secrets   # renders ~/.pi/agent/models.json (via template) + ~/.pi/searxng.json
+echo "synced: ~/.pi/agent/settings.json + AGENTS.md (rendered files via syncers/secrets)"

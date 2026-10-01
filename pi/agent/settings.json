@@ -1,0 +1,13 @@
+{
+  "lastChangelogVersion": "0.99.2",
+  "theme": "dark",
+  "packages": [
+    "npm:pi-superpowers",
+    "npm:pi-subagents",
+    "npm:@upstash/context7-pi",
+    "npm:pi-searxng"
+  ],
+  "defaultThinkingLevel": "medium",
+  "defaultProvider": "ollama",
+  "defaultModel": "qwen3.8:27b"
+}

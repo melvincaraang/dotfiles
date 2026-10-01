@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# installers/pi — pi coding agent via npm (global), pinned to 0.99.2.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+command -v node >/dev/null 2>&1 || { echo "need node — run: just install-runtimes" >&2; exit 1; }
+# npm i -g can hang on a stalled registry — timeout-guard it (install budget: 60s)
+if command -v gtimeout >/dev/null 2>&1; then
+  gtimeout 60 npm i -g @earendil-works/pi-coding-agent@0.99.2
+else
+  npm i -g @earendil-works/pi-coding-agent@0.99.2
+fi
+echo "installed: pi 0.99.2 (npm:@earendil-works/pi-coding-agent)"

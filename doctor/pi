@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# doctor/pi — version check, npm package tree present, 4 pi packages installed.
+# (`pi --version` is headless-safe — verified on this mac; still timeout-guarded.)
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+# 1) pi version == 0.99.2
+if command -v gtimeout >/dev/null 2>&1; then
+  v="$(gtimeout 20 pi --version 2>/dev/null || true)"
+else
+  v="$(pi --version 2>/dev/null || true)"
+fi
+[ "$v" = "0.99.2" ] || { echo "FAIL: pi version '${v:-<missing>}' (expected 0.99.2)" >&2; exit 1; }
+echo "ok: pi $v"
+
+# 2) ~/.pi/agent/npm non-empty (pi self-installs packages there on first run)
+[ -n "$(ls -A ~/.pi/agent/npm 2>/dev/null)" ] || { echo "FAIL: ~/.pi/agent/npm missing or empty (run pi once)" >&2; exit 1; }
+echo "ok: ~/.pi/agent/npm package tree present"
+
+# 3) the 4 pi packages from settings.json are installed
+#    (note: @upstash/context7-pi is scoped — check its full path, not the bare name)
+NM=~/.pi/agent/npm/node_modules
+for p in pi-superpowers pi-subagents pi-searxng @upstash/context7-pi; do
+  [ -d "$NM/$p" ] || { echo "FAIL: missing pi package: $p" >&2; exit 1; }
+  echo "ok: package: $p"
+done
+echo "doctor/pi: PASS"
