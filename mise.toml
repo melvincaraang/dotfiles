@@ -1,0 +1,10 @@
+# Informational runtime pins for this repo.
+# Real install happens via `installers/runtimes` (`mise use -g ...`), which writes these same pins globally.
+
+[tools]
+just = "1.58.0"
+uv = "0.9.7"
+node = "22.19.0"
+ripgrep = "15.1.0"
+fzf = "0.66.1"
+awscli = "2.31.28"
