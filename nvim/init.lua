@@ -1,4 +1,4 @@
-vim.env.PATH = "/Users/melvincaraang/.local/bin:" .. vim.env.PATH
+vim.env.PATH = vim.env.PATH .. ':' .. vim.env.HOME .. '/.local/bin'
 
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "

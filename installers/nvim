@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# installers/nvim — neovim binary per OS.
+# mac: brew | arch: pacman | ubuntu: apt if candidate >= 0.9.5, otherwise the
+# latest stable GitHub release binary (x86_64 -> x86_64, arm64 -> aarch64).
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source lib/os.sh
+
+install_from_github() {   # latest stable release -> ~/.local/share/nvim-stable, bins -> ~/.local/bin
+  local arch tag url dst="$HOME/.local/share/nvim-stable"
+  arch="$(uname -m)"
+  case "$arch" in
+    x86_64|amd64)   arch="x86_64" ;;
+    arm64|aarch64)  arch="aarch64" ;;
+    *) echo "installers/nvim: unsupported arch: $arch" >&2; return 1 ;;
+  esac
+  tag="$(curl -fsSL https://api.github.com/repos/neovim/neovim/releases/latest \
+         | grep -o '"tag_name" *: *"[^"]*"' | head -1 | cut -d'"' -f4)"
+  [ -n "$tag" ] || { echo "installers/nvim: could not resolve latest release tag" >&2; return 1; }
+  url="https://github.com/neovim/neovim/releases/download/${tag}/nvim-linux-${arch}.tar.gz"
+  echo "downloading $url"
+  mkdir -p "$dst" ~/.local/bin
+  curl -fsSL "$url" | tar xz -C "$dst"
+  for b in nvim ex view; do
+    [ -e "$dst/usr/bin/$b" ] && ln -sfn "$dst/usr/bin/$b" "$HOME/.local/bin/$b"
+  done
+  echo "done: nvim ${tag} at ${dst} (bins in ~/.local/bin)"
+}
+
+case "$OS" in
+  mac)
+    if command -v gtimeout >/dev/null 2>&1; then
+      gtimeout 120 brew install neovim
+    else
+      brew install neovim
+    fi
+    ;;
+  arch)
+    sudo pacman -S --needed neovim
+    ;;
+  ubuntu)
+    cand="$(apt-cache policy neovim 2>/dev/null | awk '/Candidate:/{print $2}')"
+    if [ -n "${cand:-}" ] && [ "$cand" != "(none)" ] && \
+       [ "$(printf '%s\n%s\n' "0.9.5" "$cand" | sort -V | head -1)" = "0.9.5" ]; then
+      sudo apt-get update
+      sudo apt-get install -y neovim
+    else
+      echo "apt neovim candidate: ${cand:-<none>} (< 0.9.5) — falling back to latest GitHub release"
+      install_from_github
+    fi
+    ;;
+  *)
+    echo "installers/nvim: unsupported OS: $OS" >&2; exit 1
+    ;;
+esac
+echo "installed: neovim ($OS)"

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# syncers/nvim — link the repo nvim config dir to ~/.config/nvim, then
+# materialize lazy.nvim plugins from lazy-lock.json and best-effort restore
+# the Mason toolchain.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source lib/os.sh
+
+LINK="$HOME/.config/nvim"
+if [ -e "$LINK" ] && [ ! -L "$LINK" ]; then
+  echo "error: $LINK is a real directory — back it up and remove it before re-linking" >&2
+  exit 1
+fi
+mkdir -p ~/.config
+ln -sfn "$ROOT/nvim" "$LINK"
+echo "synced: $LINK -> $ROOT/nvim"
+
+# Headless plugin sync — may do network work, so bound it (nvim headless
+# cannot be killed safely mid-write; a timeout abort is a safe failure mode).
+run_headless() {
+  if command -v gtimeout >/dev/null 2>&1; then
+    gtimeout 180 nvim --headless "$@"
+  else
+    nvim --headless "$@"
+  fi
+}
+
+run_headless "+Lazy! sync" +qa
+run_headless "+Mason! reset" +qa 2>/dev/null || true
+echo "synced: lazy plugins from lazy-lock.json + mason reset (best effort)"
