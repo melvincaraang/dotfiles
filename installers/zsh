@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# installers/zsh — fresh-box zsh stack: oh-my-zsh (git clone, idempotent) +
+# powerlevel10k (brew on mac / git clone to ~/.cache/p10k on linux).
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source lib/os.sh
+
+run() {   # bounded network ops (coreutils gtimeout when available)
+  local t="$1"; shift
+  if command -v gtimeout >/dev/null 2>&1; then gtimeout "$t" "$@"; else "$@"; fi
+}
+
+# oh-my-zsh — clone on a fresh machine, adopt if already present
+if [ -d "$HOME/.oh-my-zsh" ]; then
+  echo "oh-my-zsh already present: skipping clone"
+else
+  run 60 git clone --depth 1 https://github.com/ohmyzsh/ohmyzsh "$HOME/.oh-my-zsh"
+fi
+
+case "$OS" in
+  mac)
+    if [ -f "$(brew --prefix)/share/powerlevel10k/powerlevel10k.zsh-theme" ]; then
+      echo "powerlevel10k already installed: skipping"
+    else
+      HOMEBREW_NO_AUTO_UPDATE=1 brew install powerlevel10k
+    fi
+    ;;
+  arch|ubuntu|linux-generic)
+    if [ -d "$HOME/.cache/p10k" ]; then
+      echo "powerlevel10k already present at ~/.cache/p10k: skipping clone"
+    else
+      run 60 git clone --depth 1 https://github.com/romkatv/powerlevel10k "$HOME/.cache/p10k"
+    fi
+    ;;
+  *) echo "installers/zsh: unsupported OS: $OS" >&2; exit 1 ;;
+esac
+echo "installed: zsh stack ($OS)"

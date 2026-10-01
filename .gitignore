@@ -8,6 +8,9 @@ nvim/lua/plugins/packer_compiled.lua
 # kitty: machine artifact rendered by syncers/kitty from $OS at sync time
 kitty/current-keybindings.conf
 
+# zsh: machine tail (per-machine local additions) — never committed
+zsh/local.zsh
+
 # secrets: never commit real values; .example files are tracked
 .env
 secrets/*.env
